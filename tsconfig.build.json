@@ -1,0 +1,5 @@
+{
+  "$comment": "Publish build. Identical to tsconfig.json except that test files are excluded — without this they compile into dist/ and ship to npm, which bloats the package and puts vitest imports in the published output. `npm run typecheck` still uses the base config so tests stay type-checked.",
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts"]
+}
