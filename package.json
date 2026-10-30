@@ -1,6 +1,6 @@
 {
   "name": "@payghaam/web",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Payghaam SDK for the web \u2014 browser push over the Web Push Protocol, identity, tags, and events.",
   "license": "MIT",
   "author": "Payghaam <dev@payghaam.com>",
