@@ -18,6 +18,11 @@ export interface PayghaamConfig {
   serviceWorkerPath?: string;
   /** Silence the SDK's console warnings. Errors are still surfaced. */
   quiet?: boolean;
+  /**
+   * Debounce window in milliseconds for addTag/addTags updates (default: 300ms).
+   * Rapid calls within this window are coalesced into a single network payload.
+   */
+  tagDebounceMs?: number;
 }
 
 /**

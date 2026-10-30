@@ -47,6 +47,7 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "demo": "npx --yes serve . -p 4173",
     "prepublishOnly": "npm run typecheck && npm run build && npm run test"
   },
   "devDependencies": {

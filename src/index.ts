@@ -26,6 +26,10 @@ class PayghaamWeb {
   private registration: ServiceWorkerRegistration | null = null;
   private readonly taps = new TapDispatcher();
   private listening = false;
+  private pendingTags: Record<string, unknown> = {};
+  private tagDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private tagDebounceMs = 300;
+  private tagFlushPromise: Promise<void> | null = null;
 
   /**
    * Required once, as early as possible.
@@ -45,9 +49,25 @@ class PayghaamWeb {
     }
 
     this.config = { serviceWorkerPath: "/payghaam-sw.js", ...config, apiKey };
+    this.tagDebounceMs = config.tagDebounceMs ?? 300;
     this.api = new ApiClient(apiKey, config.baseUrl);
     this.externalId = readStoredExternalId();
     this.listenForTaps();
+    this.listenForLifecycleFlush();
+  }
+
+  private listenForLifecycleFlush(): void {
+    if (typeof window === "undefined") return;
+    window.addEventListener("pagehide", () => {
+      void this.flushTags();
+    });
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") {
+          void this.flushTags();
+        }
+      });
+    }
   }
 
   /** True when this browser can do web push at all. */
@@ -78,6 +98,9 @@ class PayghaamWeb {
    * Call `optOut()` for an actual unsubscribe.
    */
   logout(): void {
+    if (this.externalId && Object.keys(this.pendingTags).length > 0) {
+      void this.flushTags();
+    }
     this.externalId = null;
     try {
       localStorage.removeItem(STORAGE_KEY);
@@ -100,6 +123,48 @@ class PayghaamWeb {
   async addTags(tags: Record<string, unknown>): Promise<void> {
     if (!this.externalId) {
       this.warn("addTags called before login — tags need a user");
+      return;
+    }
+    this.pendingTags = { ...this.pendingTags, ...tags };
+
+    if (this.tagDebounceTimer) {
+      clearTimeout(this.tagDebounceTimer);
+    }
+
+    if (!this.tagFlushPromise) {
+      this.tagFlushPromise = new Promise<void>((resolve, reject) => {
+        this.tagDebounceTimer = setTimeout(() => {
+          this.executeFlushTags().then(resolve, reject);
+        }, this.tagDebounceMs);
+      });
+    } else {
+      this.tagDebounceTimer = setTimeout(() => {
+        this.executeFlushTags();
+      }, this.tagDebounceMs);
+    }
+
+    return this.tagFlushPromise;
+  }
+
+  /** Immediately flush any pending debounced tags to the backend. */
+  async flushTags(): Promise<void> {
+    if (this.tagDebounceTimer) {
+      clearTimeout(this.tagDebounceTimer);
+      this.tagDebounceTimer = null;
+    }
+    return this.executeFlushTags();
+  }
+
+  private async executeFlushTags(): Promise<void> {
+    if (this.tagDebounceTimer) {
+      clearTimeout(this.tagDebounceTimer);
+      this.tagDebounceTimer = null;
+    }
+    const tags = this.pendingTags;
+    this.pendingTags = {};
+    this.tagFlushPromise = null;
+
+    if (!this.externalId || Object.keys(tags).length === 0) {
       return;
     }
     await this.api?.updateTags(this.externalId, tags).catch((e) => this.warn("addTags failed", e));

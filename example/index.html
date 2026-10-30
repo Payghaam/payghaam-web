@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payghaam Web SDK — Live Interactive Demo</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --card-border: #1f2937;
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --code-bg: #030712;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 32px 20px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    header {
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    header p {
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-size: 14px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .card h2 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    .badge.active {
+      background: #064e3b;
+      color: #34d399;
+    }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 9px 12px;
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus {
+      border-color: var(--primary);
+    }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      background: var(--primary);
+      color: white;
+    }
+    button:hover { background: var(--primary-hover); }
+    button.secondary { background: #374151; color: #f3f4f6; }
+    button.secondary:hover { background: #4b5563; }
+    button.accent { background: var(--accent); }
+    button.accent:hover { background: var(--accent-hover); }
+    button.danger { background: var(--danger); }
+    button.danger:hover { background: var(--danger-hover); }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-box {
+      background: #030712;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .log-container {
+      background: var(--code-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 12px;
+      height: 360px;
+      overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+    }
+    .log-item {
+      padding: 6px 0;
+      border-bottom: 1px solid #111827;
+      display: flex;
+      gap: 10px;
+    }
+    .log-time { color: #6b7280; flex-shrink: 0; }
+    .log-tag { font-weight: 600; flex-shrink: 0; }
+    .log-tag.net { color: #60a5fa; }
+    .log-tag.batch { color: #34d399; }
+    .log-tag.event { color: #f59e0b; }
+    .log-msg { color: #e5e7eb; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><span>⚡</span> Payghaam SDK Test Bench</h1>
+      <p>Demonstrating Debounced Tag Batching, Dynamic Identity, and Offline Resiliency.</p>
+    </header>
+
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-val" id="stat-calls">0</div>
+        <div class="stat-lbl">Network HTTP Calls</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-tags">0</div>
+        <div class="stat-lbl">Tags Dispatched</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" id="stat-saved">0</div>
+        <div class="stat-lbl">Calls Saved By Debounce</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Left Column: Controls -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Card 1: Initialization & Auth -->
+        <div class="card">
+          <h2>1. Identity & Config <span class="badge" id="auth-badge">Unauthenticated</span></h2>
+          <div class="form-group">
+            <label>API Key</label>
+            <input type="text" id="api-key" value="ek_client_demo_key_12345" />
+          </div>
+          <div class="form-group">
+            <label>User External ID</label>
+            <input type="text" id="external-id" value="demo-user-42" />
+          </div>
+          <div class="btn-row">
+            <button onclick="handleLogin()">Login / Identify</button>
+            <button class="secondary" onclick="handleLogout()">Logout</button>
+          </div>
+        </div>
+
+        <!-- Card 2: Tag Debouncer Demonstration -->
+        <div class="card">
+          <h2>2. Tag Debouncing & Batching <span class="badge active">300ms Bucket</span></h2>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+            In unoptimized SDKs, firing 5 tags generates 5 sequential network requests.
+            With Payghaam's bucket debounce, they collapse into <strong>1 single request</strong>.
+          </p>
+          <div class="btn-row">
+            <button class="accent" onclick="spamTags(5)">🚀 Spam 5 Tags in 50ms</button>
+            <button class="accent" onclick="spamTags(10)">🔥 Spam 10 Tags</button>
+            <button class="secondary" onclick="handleSingleTag()">Add 1 Tag</button>
+            <button class="secondary" onclick="handleFlush()">Flush Now</button>
+          </div>
+        </div>
+
+        <!-- Card 3: Events -->
+        <div class="card">
+          <h2>3. Event Ingestion</h2>
+          <div class="btn-row">
+            <button onclick="trackCustomEvent('button_clicked')">Track 'button_clicked'</button>
+            <button onclick="trackCustomEvent('purchase_completed')">Track 'purchase_completed'</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Live Event Stream -->
+      <div class="card">
+        <h2>Live Event & Network Inspector <button class="secondary" style="padding: 4px 10px; font-size: 11px;" onclick="clearLogs()">Clear</button></h2>
+        <div class="log-container" id="log-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Payghaam } from "../dist/index.js";
+
+    let networkCallCount = 0;
+    let tagMutationCount = 0;
+    let callsSavedCount = 0;
+
+    const logBox = document.getElementById("log-box");
+    const statCalls = document.getElementById("stat-calls");
+    const statTags = document.getElementById("stat-tags");
+    const statSaved = document.getElementById("stat-saved");
+    const authBadge = document.getElementById("auth-badge");
+
+    function log(type, tag, message) {
+      const row = document.createElement("div");
+      row.className = "log-item";
+      const time = new Date().toISOString().split("T")[1].slice(0, 8);
+      row.innerHTML = `<span class="log-time">${time}</span><span class="log-tag ${type}">[${tag}]</span><span class="log-msg">${message}</span>`;
+      logBox.appendChild(row);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Intercept fetch for demo visualization
+    const originalFetch = window.fetch;
+    window.fetch = async function(url, options) {
+      if (typeof url === "string" && (url.includes("/sdk/") || url.includes("/api/"))) {
+        networkCallCount++;
+        statCalls.textContent = networkCallCount;
+        statSaved.textContent = Math.max(0, tagMutationCount - networkCallCount);
+
+        const method = options?.method || "GET";
+        const bodyPreview = options?.body ? options.body : "";
+        log("net", "NETWORK", `--> ${method} ${url.replace(/https?:\/\/[^\/]+/, "")} | Body: ${bodyPreview}`);
+
+        // Return mock 202 Accepted response for demo
+        return new Response(JSON.stringify({ accepted: true }), {
+          status: 202,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      return originalFetch.apply(this, arguments);
+    };
+
+    window.handleLogin = async function() {
+      const apiKey = document.getElementById("api-key").value;
+      const externalId = document.getElementById("external-id").value;
+      Payghaam.initialize({ apiKey, baseUrl: "https://api.demo.payghaam.com/api", tagDebounceMs: 300 });
+      await Payghaam.login(externalId);
+      authBadge.textContent = externalId;
+      authBadge.classList.add("active");
+      log("batch", "AUTH", `Logged in as '${externalId}'`);
+    };
+
+    window.handleLogout = function() {
+      Payghaam.logout();
+      authBadge.textContent = "Unauthenticated";
+      authBadge.classList.remove("active");
+      log("batch", "AUTH", `Logged out current user`);
+    };
+
+    window.handleSingleTag = async function() {
+      tagMutationCount++;
+      statTags.textContent = tagMutationCount;
+      const key = "tier";
+      const val = "gold_" + Math.floor(Math.random() * 100);
+      log("batch", "TAG QUEUED", `${key} = "${val}"`);
+      await Payghaam.addTag(key, val);
+    };
+
+    window.spamTags = function(count) {
+      log("batch", "BURST", `Starting burst of ${count} tag mutations...`);
+      for (let i = 0; i < count; i++) {
+        setTimeout(async () => {
+          tagMutationCount++;
+          statTags.textContent = tagMutationCount;
+          const key = `attr_${i % 3}`;
+          const val = `value_${Date.now() % 1000}`;
+          log("batch", "TAG QUEUED", `${key} = "${val}" (burst item #${i + 1})`);
+          await Payghaam.addTag(key, val);
+        }, i * 10);
+      }
+    };
+
+    window.handleFlush = async function() {
+      log("batch", "FLUSH", `Manually triggering immediate queue flush`);
+      await Payghaam.flushTags();
+    };
+
+    window.trackCustomEvent = async function(name) {
+      log("event", "EVENT", `Tracking custom event: '${name}'`);
+      await Payghaam.trackEvent(name, { timestamp: Date.now(), demo: true });
+    };
+
+    window.clearLogs = function() {
+      logBox.innerHTML = "";
+    };
+
+    // Auto-init on page load
+    window.handleLogin();
+  </script>
+</body>
+</html>
