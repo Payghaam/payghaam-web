@@ -69,7 +69,8 @@ export class ApiClient {
     sub: SerializedSubscription,
     meta: { deviceOs?: string; sdk?: string } = {},
   ): Promise<unknown> {
-    return this.request(`/sdk/users/${encodeURIComponent(externalId)}/subscriptions`, "POST", {
+    return this.request("/sdk/subscriptions", "POST", {
+      externalId,
       type: "WEB_PUSH",
       token: sub.endpoint,
       webP256dh: sub.p256dh,
@@ -79,7 +80,7 @@ export class ApiClient {
   }
 
   updateTags(externalId: string, tags: Record<string, unknown>): Promise<unknown> {
-    return this.request(`/sdk/users/${encodeURIComponent(externalId)}/tags`, "PUT", { tags });
+    return this.request("/sdk/tags", "PUT", { externalId, tags });
   }
 
   trackEvent(
